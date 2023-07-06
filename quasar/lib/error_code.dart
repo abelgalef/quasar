@@ -1,10 +1,7 @@
-// ignore_for_file: constant_identifier_names
-
 /// Error codes defined in the [JSON-RPC 2.0 specificiation][spec].
 ///
 /// These codes are generally used for protocol-level communication. Most of
-/// them shouldn't be used by the application. Those that should have
-/// convenience constructors in [RpcException].
+/// them shouldn't be used by the application.
 ///
 /// [spec]: http://www.jsonrpc.org/specification#error_object
 /// An error code indicating that invalid JSON was received by the server.

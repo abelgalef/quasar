@@ -2,32 +2,67 @@ import 'package:pedantic/pedantic.dart';
 import 'package:quasar/quasar.dart';
 
 void main(List<String> arguments) async {
-  var server = QuasarServer('nats://127.0.0.1:4222', 'my-test-server-1');
+  // We start a server and pass our NATS server address and a unique name or subject (prefix) to subscribe to.
+  var server = QuasarServer('nats://127.0.0.1:4222', 'my-unique-server-name-1');
 
   var i = 5;
-  // ADD A METHOD TO SERVER
+  // Any string may be used as a method name. Methods are case-sensitive.
   server.registerMethod('count', () {
+    // Just return the value to be sent as a response to the client. This can
+    // be anything JSON-serializable.
     return i++;
   });
 
+  // Methods can take parameters. They are presented as a Map<String, dynamic> object
+  // which makes it easy to validate that the excpected parameters exist.
   server.registerMethod('echo', (Parameters params) {
+    // If the request doesn't have a "message" parameter this will
+    // automatically send a response notifying the client that the request
+    // was invalid.
     return params.data!['message'];
   });
 
+  // A method can send an error response by throwing any `Exception`.
+  // Any positive number may be used as an application- defined error code.
+  const dividByZero = 1;
+  server.registerMethod('divide', (Parameters params) {
+    var divisor = params.data!['divisor'];
+    if (divisor == 0) {
+      throw JSON_RPC_Err('Cannot divide by zero.', dividByZero);
+    }
+
+    return int.parse(params.data!['dividend']) / divisor;
+  });
+
+  // We start a client and pass our NATS server address and name of the server or subject (server prefix) to publish to.
   var client = QuasarClient('nats://127.0.0.1:4222', 'my-test-server-1');
+
+  // The client won't subscribe to the input stream until you call `listen`.
+  // The returned Future won't complete until the connection is closed.
   await client.listen();
 
-  // SEND A NOTIFICATION TO THE SERVER
-  client.sendNotification('count');
-  client.sendNotification('count');
-  client.sendNotification('count');
+  // A notification is a way to call a method that tells the server that no
+  // result is expected. Its return type is `void`; even if it causes an
+  // error, you won't hear back.
   client.sendNotification('count');
 
+  // This calls the "count" method on the server. A Future is returned that
+  // will complete to the value contained in the server's response.
   var count = await client.sendRequest('count');
   print('Count is $count');
 
+  // Parameters are passed as a simple Map. Make sure they're JSON-serializable!
   var echo = await client.sendRequest('echo', {'message': 'hello'});
   print('Echo says $echo');
+
+  // If the server sends an error response, the returned Future will complete
+  // with an RpcException. You can catch this error and inspect its error
+  // code, message, and any data that the server sent along with it.
+  try {
+    await client.sendRequest('divide', {'dividend': 2, 'divisor': 0});
+  } on JSON_RPC_Err catch (error) {
+    print('JSON RPC error ${error.code}: ${error.message}');
+  }
 
   // CLOSE THE SERVER AND CLIENT
   await server.close();
