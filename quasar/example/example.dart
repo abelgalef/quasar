@@ -16,7 +16,7 @@ void main(List<String> arguments) async {
   // Methods can take parameters. They are presented as a Map<String, dynamic> object
   // which makes it easy to validate that the excpected parameters exist.
   server.registerMethod('echo', (Parameters params) {
-    // If the request doesn't have a "message" parameter this will
+    // If the request doesn\'t have a "message" parameter this will
     // automatically send a response notifying the client that the request
     // was invalid.
     return params.data!['message'];
@@ -37,21 +37,21 @@ void main(List<String> arguments) async {
   // We start a client and pass our NATS server address and name of the server or subject (server prefix) to publish to.
   var client = QuasarClient('nats://127.0.0.1:4222', 'my-test-server-1');
 
-  // The client won't subscribe to the input stream until you call `listen`.
-  // The returned Future won't complete until the connection is closed.
+  // The client won\'t subscribe to the input stream until you call `listen`.
+  // The returned Future won\'t complete until the connection is closed.
   await client.listen();
 
   // A notification is a way to call a method that tells the server that no
   // result is expected. Its return type is `void`; even if it causes an
-  // error, you won't hear back.
+  // error, you won\'t hear back.
   client.sendNotification('count');
 
   // This calls the "count" method on the server. A Future is returned that
-  // will complete to the value contained in the server's response.
+  // will complete to the value contained in the server\'s response.
   var count = await client.sendRequest('count');
   print('Count is $count');
 
-  // Parameters are passed as a simple Map. Make sure they're JSON-serializable!
+  // Parameters are passed as a simple Map. Make sure they\'re JSON-serializable!
   var echo = await client.sendRequest('echo', {'message': 'hello'});
   print('Echo says $echo');
 
