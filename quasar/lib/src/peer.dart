@@ -24,6 +24,8 @@ class QuasarPeer implements QuasarServer, QuasarClient {
   @override
   Map<String, Function> methods = {};
 
+  Client get client => _client.client;
+
   QuasarPeer(String peerName, rendezvous, nats_addr) {
     _peerName = peerName;
     _rendezvous = rendezvous;
@@ -60,11 +62,10 @@ class QuasarPeer implements QuasarServer, QuasarClient {
   }
 
   void connectToPeer(String newFoundPeer, Completer _completer) async {
-    _remotePeerName = newFoundPeer;
     if (newFoundPeer == _peerName) {
       return;
     }
-
+    _remotePeerName = newFoundPeer;
     _client = QuasarClient(_nats_addr, _remotePeerName);
     await _client.listen();
 

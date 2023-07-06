@@ -29,7 +29,6 @@ class ClientController {
   }
 
   void gen_resp(Message msg) async {
-    // print(msg.string);
     completer.complete(msg.string);
 
     var jsonRPC = JSON_RPC.fromJson(jsonDecode(msg.string));

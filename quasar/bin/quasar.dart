@@ -89,11 +89,63 @@ class QuasarServer extends Quasar {
   Map<String, Function> methods = {};
   late Subscription<dynamic> sub;
 
+  late String prefix;
+
+  bool _methodFromSubject = false;
+  bool _useSegments = false;
+
+  bool get getMethodFromSubject => _methodFromSubject;
+
+  set setMethodFromSubject(bool methodFromSubject) {
+    _methodFromSubject = methodFromSubject;
+    var _prefixes = prefix.split('.');
+
+    if (methodFromSubject) {
+      if (_prefixes[_prefixes.length - 1] != '>') {
+        _prefixes.add('>');
+      }
+    } else {
+      if (_prefixes[_prefixes.length - 1] == '>') {
+        _prefixes[_prefixes.length - 1] = '';
+      }
+    }
+
+    prefix = _prefixes.join('.');
+    super.client.unSub(sub);
+    sub = super.client.sub(prefix);
+
+    unawaited(sub.stream.forEach(_gen_resp));
+  }
+
+  bool get getUseSegments => _useSegments;
+
+  set setUseSegments(useSegments) {
+    _useSegments = useSegments;
+    var _prefixes = prefix.split('.');
+
+    if (useSegments) {
+      if (_prefixes[_prefixes.length - 1] != '>') {
+        _prefixes.add('>');
+      }
+    } else {
+      if (_prefixes[_prefixes.length - 1] == '>') {
+        _prefixes[_prefixes.length - 1] = '';
+      }
+    }
+
+    prefix = _prefixes.join('.');
+    super.client.unSub(sub);
+    sub = super.client.sub(prefix);
+
+    unawaited(sub.stream.forEach(_gen_resp));
+  }
+
   QuasarServer(String nats_server_address, name) {
+    prefix = name;
     super.identifier = name;
 
     super.client.connect(Uri.parse(nats_server_address));
-    sub = super.client.sub(name);
+    sub = super.client.sub(prefix);
 
     unawaited(sub.stream.forEach(_gen_resp));
   }
@@ -102,18 +154,42 @@ class QuasarServer extends Quasar {
     methods[methodName] = method;
   }
 
+  String transformMessage(Message rawMsg) {
+    var subject = rawMsg.subject;
+
+    var transformedMsg = jsonDecode(rawMsg.string);
+
+    var _prefixes = subject!.replaceFirst(super.identifier, '');
+    if (_methodFromSubject) {
+      transformedMsg['method'] = _prefixes.split('.')[0];
+    }
+
+    if (_useSegments) {
+      var idx = 0;
+      if (_methodFromSubject) {
+        idx++;
+      }
+
+      transformedMsg['params']['data']['segments'] =
+          _prefixes.split('.').getRange(idx, _prefixes.split('.').length);
+    }
+    return jsonEncode(transformedMsg);
+  }
+
   void _gen_resp(Message event) async {
     final jsonRPC;
 
+    var msg = transformMessage(event);
+
     try {
-      jsonRPC = JSON_RPC.fromJson(jsonDecode(event.string));
+      jsonRPC = JSON_RPC.fromJson(jsonDecode(msg));
     } on FormatException {
       // CAN NOT RETURN AN ERROR BECAUSE THE RETURN ADDRESS WAS IN THE JSON
       return null;
     } catch (e) {
       // JSON CAN BE DECODED BUT CANT FIT TO THE JSON_RPC CLASS
       try {
-        var jsonRPC = jsonDecode(event.string);
+        var jsonRPC = jsonDecode(msg);
 
         if (jsonRPC['params']['return_addr'] != null) {
           var jsonRPC_err = JSON_RPC_Err({

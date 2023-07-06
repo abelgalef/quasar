@@ -12,20 +12,19 @@ import '../../lib/error_code.dart' as error_code;
 
 void main() {
   late QuasarPeer? peer1;
-  late PeerController? server;
+  late QuasarPeerController? server;
 
-  final nats_server = 'nats://127.0.0.1:4222', peer1_name = 'my-peer-1';
+  final nats_server = 'nats://127.0.0.1:4222',
+      peer1_name = 'my-peer-1',
+      server_name = 'my-test-server-1';
 
   group('like a client', () {
     setUp(() async {
-      var completer = Completer();
-      server = PeerController('my-test-peer-1', 'server');
-      peer1 = QuasarPeer(peer1_name, 'my-test-peer-1', nats_server);
+      peer1 = QuasarPeer(peer1_name, 'place', nats_server);
+      server = QuasarPeerController(server_name, 'place', nats_server);
 
-      unawaited(peer1!.listen().then((value) => completer.complete()));
-
-      await server!.listen();
-      await completer.future;
+      unawaited(server!.listen());
+      await peer1!.listen();
     });
 
     tearDown(() async {
@@ -132,9 +131,10 @@ void main() {
 
   group('like a server', () {
     setUp(() async {
-      server = PeerController('my-peer-1', 'client');
-      await server!.client.waitUntilConnected();
-      peer1 = QuasarPeer(peer1_name, 'my-test-peer-1', nats_server);
+      peer1 = QuasarPeer(peer1_name, 'place', nats_server);
+      server = QuasarPeerController(server_name, 'place', nats_server);
+
+      unawaited(server!.listen());
       await peer1!.listen();
     });
 

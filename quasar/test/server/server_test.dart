@@ -51,6 +51,39 @@ void main() {
         }))));
   });
 
+  test('gets a method from the subject', () async {
+    server!.registerMethod('foo', (params) {
+      return params.data;
+    });
+
+    client =
+        ServerController(nats_server, server_name + '.foo.hi.hello', uuid.v4());
+
+    server!.setUseSegments = true;
+    server!.setMethodFromSubject = true;
+
+    expect(
+        client!.sendReq(jsonEncode({
+          'jsonrpc': '2.0',
+          'method': '',
+          'params': {
+            'return_addr': client!.client_addr,
+            'data': {'hello': 'world'}
+          },
+          'id': 1234
+        })),
+        completion(equals(jsonEncode({
+          'jsonrpc': '2.0',
+          'result': {
+            'hello': 'world',
+            'segments': ['hi', 'hello']
+          },
+          'id': 1234
+        }))));
+
+    await client!.close();
+  });
+
   test('calls a method that takes no parameteres', () {
     server!.registerMethod('foo', () => 'foo');
 
@@ -132,13 +165,13 @@ void main() {
   });
 
   test('doesn\'t return a result for a notification', () {
-    server!.registerMethod('foo', (params) => 'result');
+    server!.registerMethod('foo', () => 'result');
 
     expect(
         client!.sendReq(jsonEncode({
           'jsonrpc': '2.0',
           'method': 'foo',
-          'params': {'return_addr': client!.client_addr, 'data': null},
+          'params': {'return_addr': null, 'data': {}},
           'id': 1234
         })),
         doesNotComplete);

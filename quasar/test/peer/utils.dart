@@ -1,55 +1,45 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:pedantic/pedantic.dart';
 
 import 'package:dart_nats/dart_nats.dart';
-import 'package:pedantic/pedantic.dart';
-import 'package:quasar/src/models.dart';
+import 'package:quasar/quasar.dart';
 import 'package:uuid/uuid.dart';
 
-class PeerController {
-  final nats_server = 'nats://127.0.0.1:4222';
+// import 'client.dart';
+// import 'server.dart';
 
-  late String server_name;
-  late String answer;
-
-  final client = Client();
-  late Subscription sub;
-  late Completer completer;
+class QuasarPeerController implements QuasarServer, QuasarClient {
+  late QuasarClient _client;
+  late QuasarServer _server;
 
   final ret_addr = Uuid().v4();
-  final peerID = Uuid().v4();
 
-  PeerController(String server_name, String type) {
-    this.server_name = server_name;
+  late String _peerName,
+      _remotePeerName,
+      _nats_addr,
+      _rendezvous,
+      connStatus = 'not connected',
+      answer;
 
-    client.connect(Uri.parse(nats_server));
+  late Subscription _rendezvousSub;
+  late Completer completer;
 
-    if (type == 'server') {
-      sub = client.sub(server_name);
-      unawaited(sub.stream.forEach(gen_resp));
-    } else {
-      sub = client.sub(ret_addr);
-    }
-  }
+  Timer? timer;
 
-  Future close() {
-    return client.close();
-  }
+  @override
+  Map<String, Function> methods = {};
 
-  Future listen() async {
-    await client.waitUntilConnected();
+  Client get client => _client.client;
 
-    return client.pubString(
-        server_name,
-        jsonEncode({
-          'jsonrpc': '2.0',
-          'method': 'ackConn',
-          'params': {
-            'return_addr': null,
-            'data': {'remoteAddr': server_name}
-          },
-          'id': 1234
-        }));
+  QuasarPeerController(String peerName, rendezvous, nats_addr) {
+    _peerName = peerName;
+    _rendezvous = rendezvous;
+    _nats_addr = nats_addr;
+
+    _server = QuasarServer(nats_addr, _peerName);
+
+    // _client = QuasarClient(nats_addr, _remotePeerName);
   }
 
   Future getReadyForIncomingData(String answer) {
@@ -59,22 +49,116 @@ class PeerController {
     return completer.future;
   }
 
-  void gen_resp(Message msg) async {
-    // print(msg.string);
-    completer.complete(msg.string);
+  @override
+  Future listen() async {
+    await _server.client.waitUntilConnected();
+    _server.client.unSub(_server.sub);
 
-    var jsonRPC = JSON_RPC.fromJson(jsonDecode(msg.string));
-    if (jsonRPC.params.return_addr != null) {
-      unawaited(client.pubString(jsonRPC.params.return_addr!, answer));
+    var sub = _server.client.sub(_peerName);
+
+    unawaited(sub.stream.forEach((msg) {
+      var jsonRPC = JSON_RPC.fromJson(jsonDecode(msg.string));
+      if (jsonRPC.method == 'hello' || jsonRPC.method == 'ackConn') {
+        return;
+      }
+
+      completer.complete(msg.string);
+
+      if (jsonRPC.params.return_addr != null) {
+        unawaited(client.pubString(jsonRPC.params.return_addr!, answer));
+      }
+    }));
+
+    var _completer = Completer();
+
+    _server.registerMethod('hello', (params) {
+      if (connStatus == 'not connected') {
+        connStatus = 'connecting';
+        connectToPeer(params.data.remoteAddr.toString(), _completer);
+      }
+      return 'acknowledged';
+    });
+
+    _rendezvousSub = _server.client.sub(_rendezvous);
+
+    unawaited(_rendezvousSub.stream.forEach((element) {
+      var msg = jsonDecode(element.string);
+      connectToPeer(msg['params']['data']['remoteAddr'].toString(), _completer);
+    }));
+
+    broadcastSelf();
+
+    return _completer.future;
+  }
+
+  void connectToPeer(String newFoundPeer, Completer _completer) async {
+    if (newFoundPeer == _peerName) {
+      return;
     }
+    _remotePeerName = newFoundPeer;
+    _client = QuasarClient(_nats_addr, _remotePeerName);
+    await _client.listen();
+
+    // await _client.sendRequest('hello', {'remoteAddr': _peerName});
+    _server.client.unSub(_rendezvousSub);
+
+    timer!.cancel();
+
+    _completer.complete();
+  }
+
+  void broadcastSelf() async {
+    timer = Timer.periodic(
+        Duration(seconds: 2),
+        (Timer t) => _server.client.pubString(
+            _rendezvous,
+            jsonEncode({
+              'jsonrpc': '2.0',
+              'method': 'hello',
+              'params': {
+                'return_addr': null,
+                'data': {'remoteAddr': _peerName}
+              },
+              'id': 1234
+            })));
   }
 
   Future<String> sendReq(String msg) async {
     await client.waitUntilConnected();
-    await client.pubString(server_name, msg);
+    var sub = client.sub(ret_addr);
+
+    await client.pubString(_remotePeerName, msg);
 
     var recv = await sub.stream.first;
 
+    client.unSub(sub);
+
     return recv.string;
   }
+
+  @override
+  Future close() async {
+    await _client.close();
+    await _server.close();
+  }
+
+  @override
+  void registerMethod(String methodName, Function method) {
+    _server.registerMethod(methodName, method);
+  }
+
+  @override
+  void sendNotification(String method,
+      [Map<String, dynamic> parameters = const {}]) {
+    _client.sendNotification(method, parameters);
+  }
+
+  @override
+  Future sendRequest(String method,
+      [Map<String, dynamic> parameters = const {}]) {
+    return _client.sendRequest(method, parameters);
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }

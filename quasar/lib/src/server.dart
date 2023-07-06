@@ -11,14 +11,66 @@ class QuasarServer extends Quasar {
   late Subscription<dynamic> sub;
   late String nats_addr, server_name;
 
+  late String prefix;
+
+  bool _methodFromSubject = false;
+  bool _useSegments = false;
+
+  bool get getMethodFromSubject => _methodFromSubject;
+
+  set setMethodFromSubject(bool methodFromSubject) {
+    _methodFromSubject = methodFromSubject;
+    var _prefixes = prefix.split('.');
+
+    if (methodFromSubject) {
+      if (_prefixes[_prefixes.length - 1] != '>') {
+        _prefixes.add('>');
+      }
+    } else {
+      if (_prefixes[_prefixes.length - 1] == '>') {
+        _prefixes[_prefixes.length - 1] = '';
+      }
+    }
+
+    prefix = _prefixes.join('.');
+    super.client.unSub(sub);
+    sub = super.client.sub(prefix);
+
+    unawaited(sub.stream.forEach(_gen_resp));
+  }
+
+  bool get getUseSegments => _useSegments;
+
+  set setUseSegments(useSegments) {
+    _useSegments = useSegments;
+    var _prefixes = prefix.split('.');
+
+    if (useSegments) {
+      if (_prefixes[_prefixes.length - 1] != '>') {
+        _prefixes.add('>');
+      }
+    } else {
+      if (_prefixes[_prefixes.length - 1] == '>') {
+        _prefixes[_prefixes.length - 1] = '';
+      }
+    }
+
+    prefix = _prefixes.join('.');
+    super.client.unSub(sub);
+    sub = super.client.sub(prefix);
+
+    unawaited(sub.stream.forEach(_gen_resp));
+  }
+
   QuasarServer(String nats_server_address, name) {
+    prefix = name;
     super.identifier = name;
 
     server_name = name;
     nats_addr = nats_server_address;
 
     super.client.connect(Uri.parse(nats_server_address));
-    sub = super.client.sub(name);
+    sub = super.client.sub(prefix);
 
     unawaited(sub.stream.forEach(_gen_resp));
   }
@@ -27,11 +79,37 @@ class QuasarServer extends Quasar {
     methods[methodName] = method;
   }
 
+  String transformMessage(Message rawMsg) {
+    var subject = rawMsg.subject;
+
+    var transformedMsg = jsonDecode(rawMsg.string);
+
+    var _prefixes = subject!.replaceFirst(super.identifier + '.', '');
+    if (_methodFromSubject) {
+      transformedMsg['method'] = _prefixes.split('.')[0];
+    }
+
+    if (_useSegments) {
+      var idx = 0;
+      if (_methodFromSubject) {
+        idx++;
+      }
+
+      transformedMsg['params']['data']['segments'] = _prefixes
+          .split('.')
+          .getRange(idx, _prefixes.split('.').length)
+          .toList();
+    }
+    return jsonEncode(transformedMsg);
+  }
+
   void _gen_resp(Message event) async {
     final JSON_RPC jsonRPC;
 
     try {
-      jsonRPC = JSON_RPC.fromJson(jsonDecode(event.string));
+      var msg = transformMessage(event);
+
+      jsonRPC = JSON_RPC.fromJson(jsonDecode(msg));
     } on FormatException {
       // CAN NOT RETURN AN ERROR BECAUSE THE RETURN ADDRESS WAS IN THE JSON
       return null;
@@ -79,6 +157,10 @@ class QuasarServer extends Quasar {
         'code': error_code.INVALID_PARAMS,
         'message': error_code.name(error_code.INVALID_PARAMS)
       }, jsonRPC.id);
+
+      if (jsonRPC.params.data == null) {
+        return;
+      }
 
       unawaited(client.pubString(
           jsonRPC.params.return_addr!, jsonEncode(jsonRPC_err)));
