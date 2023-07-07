@@ -27,7 +27,8 @@ class QuasarClient extends Quasar {
   ///
   /// The Client can not work without this first being invoked.
   Future listen() {
-    return super.client.connect(Uri.parse(nats_addr));
+    super.client.connect(Uri.parse(nats_addr));
+    return super.client.waitUntilConnected();
   }
 
   /// Sends a Request and dose not excpect a response, errors from the server are suppressed.
@@ -37,7 +38,7 @@ class QuasarClient extends Quasar {
   /// @param Map<String, dynamic> `parameters` The parameters to pass to the method.
   void sendNotification(String method,
       [Map<String, dynamic> parameters = const {}]) {
-    var params = Parameters(null, parameters);
+    var params = Parameters(parameters);
     var jsonRPC = JSON_RPC(method, Random().nextInt(100), params);
 
     unawaited(client.pubString(server_addr, jsonEncode(jsonRPC)));
@@ -50,32 +51,37 @@ class QuasarClient extends Quasar {
   /// @param Map<String, dynamic> `parameters` The parameters to pass to the method.
   Future sendRequest(String method,
       [Map<String, dynamic> parameters = const {}]) async {
-    var req_id = uuid.v4();
-    var sub = super.client.sub(req_id);
     var _completer = Completer();
 
-    var params = Parameters(req_id, parameters);
+    var params = Parameters(parameters);
     var jsonRPC = JSON_RPC(method, Random().nextInt(100), params);
 
-    await client.pubString(server_addr, jsonEncode(jsonRPC));
-    _processReq(sub.stream.first, _completer);
+    var resp =
+        await client.requestString(server_addr, jsonEncode(jsonRPC.toJson()));
+    Map<String, dynamic> jsonRPC_Ret = jsonDecode(resp.string);
+
+    if (jsonRPC_Ret.containsKey('error')) {
+      _completer.completeError(JSON_RPC_Err.fromJson(jsonRPC_Ret));
+    } else {
+      _completer.complete(jsonRPC_Ret['result']);
+    }
 
     return _completer.future;
   }
 
   /// Processes the response from the server.
-  void _processReq(Future<Message<dynamic>> msg, Completer _completer) async {
-    var returnedMsg = await msg;
-    Map<String, dynamic> jsonRPC_Ret = jsonDecode(returnedMsg.string);
+  // void _processReq(Future<Message<dynamic>> msg, Completer _completer) async {
+  //   var returnedMsg = await msg;
+  //   Map<String, dynamic> jsonRPC_Ret = jsonDecode(returnedMsg.string);
 
-    if (jsonRPC_Ret.containsKey('error')) {
-      // _completer.completeError(jsonRPC_Ret['error']['code'] +
-      //     ': ' +
-      //     jsonRPC_Ret['error']['message']);
-      _completer.completeError(JSON_RPC_Err.fromJson(jsonRPC_Ret));
+  //   if (jsonRPC_Ret.containsKey('error')) {
+  //     // _completer.completeError(jsonRPC_Ret['error']['code'] +
+  //     //     ': ' +
+  //     //     jsonRPC_Ret['error']['message']);
+  //     _completer.completeError(JSON_RPC_Err.fromJson(jsonRPC_Ret));
 
-      return null;
-    }
-    _completer.complete(jsonRPC_Ret['result']);
-  }
+  //     return null;
+  //   }
+  //   _completer.complete(jsonRPC_Ret['result']);
+  // }
 }

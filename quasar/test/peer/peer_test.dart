@@ -47,10 +47,7 @@ void main() {
           allOf([
             containsPair('jsonrpc', '2.0'),
             containsPair('method', 'foo'),
-            containsPair(
-                'params',
-                allOf(containsPair('return_addr', isA<String>()),
-                    containsPair('data', {'param': 'value'}))),
+            containsPair('params', containsPair('data', {'param': 'value'})),
             containsPair(
                 'id', allOf([isA<int>(), lessThan(100), greaterThan(0)]))
           ]));
@@ -68,7 +65,6 @@ void main() {
             containsPair(
                 'params',
                 allOf([
-                  containsPair('return_addr', null),
                   containsPair('data', {'param': 'param'})
                 ])),
             containsPair(
@@ -84,12 +80,7 @@ void main() {
           allOf([
             containsPair('jsonrpc', '2.0'),
             containsPair('method', 'foo'),
-            containsPair(
-                'params',
-                allOf([
-                  containsPair('return_addr', null),
-                  containsPair('data', {})
-                ])),
+            containsPair('params', allOf([containsPair('data', {})])),
             containsPair(
                 'id', allOf([isA<int>(), lessThan(100), greaterThan(0)]))
           ]));
@@ -120,9 +111,7 @@ void main() {
             containsPair('jsonrpc', '2.0'),
             containsPair('method', 'foo'),
             containsPair(
-                'params',
-                allOf(containsPair('return_addr', isA<String>()),
-                    containsPair('data', {'param': 'param'}))),
+                'params', allOf(containsPair('data', {'param': 'param'}))),
             containsPair(
                 'id', allOf([isA<int>(), lessThan(101), greaterThan(-1)]))
           ]));
@@ -156,7 +145,6 @@ void main() {
             'jsonrpc': '2.0',
             'method': 'foo',
             'params': {
-              'return_addr': server!.ret_addr,
               'data': {'some': 'value'}
             },
             'id': 1234
@@ -175,7 +163,7 @@ void main() {
           server!.sendReq(jsonEncode({
             'jsonrpc': '2.0',
             'method': 'foo',
-            'params': {'return_addr': server!.ret_addr, 'data': {}},
+            'params': {'data': {}},
             'id': 1234
           })),
           completion(equals(
@@ -189,7 +177,7 @@ void main() {
           server!.sendReq(jsonEncode({
             'jsonrpc': '2.0',
             'method': 'foo',
-            'params': {'return_addr': server!.ret_addr, 'data': null},
+            'params': {'data': null},
             'id': 1234
           })),
           completion(equals(
@@ -204,7 +192,6 @@ void main() {
             'jsonrpc': '2.0',
             'method': 'foo',
             'params': {
-              'return_addr': server!.ret_addr,
               'data': {'some': 1}
             },
             'id': 1234
@@ -226,7 +213,7 @@ void main() {
           server!.sendReq(jsonEncode({
             'jsonrpc': '2.0',
             'method': 'foo',
-            'params': {'return_addr': server!.ret_addr, 'data': null},
+            'params': {'data': null},
             'id': 1234
           })),
           completion(equals(jsonEncode({
@@ -238,7 +225,7 @@ void main() {
                 'request': {
                   'jsonrpc': '2.0',
                   'method': 'foo',
-                  'params': {'return_addr': server!.ret_addr, 'data': null},
+                  'params': {'data': null},
                   'id': 1234
                 },
                 'full': 'FormatException: bad format'

@@ -1,7 +1,7 @@
 import 'package:pedantic/pedantic.dart';
 import 'package:quasar/quasar.dart';
 
-void main(List<String> arguments) async {
+Future<void> main(List<String> arguments) async {
   // We start a server and pass our NATS server address and a unique name or subject (prefix) to subscribe to.
   var server = QuasarServer('nats://127.0.0.1:4222', 'my-unique-server-name-1');
 
@@ -44,7 +44,7 @@ void main(List<String> arguments) async {
   // A notification is a way to call a method that tells the server that no
   // result is expected. Its return type is `void`; even if it causes an
   // error, you won\'t hear back.
-  client.sendNotification('count');
+  // client.sendNotification('count');
 
   // This calls the "count" method on the server. A Future is returned that
   // will complete to the value contained in the server\'s response.
@@ -58,11 +58,11 @@ void main(List<String> arguments) async {
   // If the server sends an error response, the returned Future will complete
   // with an RpcException. You can catch this error and inspect its error
   // code, message, and any data that the server sent along with it.
-  try {
-    await client.sendRequest('divide', {'dividend': 2, 'divisor': 0});
-  } on JSON_RPC_Err catch (error) {
-    print('JSON RPC error ${error.code}: ${error.message}');
-  }
+  // try {
+  //   await client.sendRequest('divide', {'dividend': 2, 'divisor': 0});
+  // } on JSON_RPC_Err catch (error) {
+  //   print('JSON RPC error ${error.code}: ${error.message}');
+  // }
 
   // CLOSE THE SERVER AND CLIENT
   await server.close();
@@ -73,8 +73,8 @@ void main(List<String> arguments) async {
   var peer2 = QuasarPeer('i-am-peer-2', 'place', 'nats://127.0.0.1:4222');
 
   // WAIT FOR PEERS TO DISCOVER EACH OTHER
-  unawaited(peer1.listen());
-  await peer2.listen();
+  unawaited(peer2.listen());
+  await peer1.listen();
 
   peer1.registerMethod('name', () => 'peer 1');
 

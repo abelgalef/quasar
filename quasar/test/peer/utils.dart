@@ -64,9 +64,7 @@ class QuasarPeerController implements QuasarServer, QuasarClient {
 
       completer.complete(msg.string);
 
-      if (jsonRPC.params.return_addr != null) {
-        unawaited(client.pubString(jsonRPC.params.return_addr!, answer));
-      }
+      msg.respondString(answer);
     }));
 
     var _completer = Completer();
@@ -125,13 +123,8 @@ class QuasarPeerController implements QuasarServer, QuasarClient {
 
   Future<String> sendReq(String msg) async {
     await client.waitUntilConnected();
-    var sub = client.sub(ret_addr);
 
-    await client.pubString(_remotePeerName, msg);
-
-    var recv = await sub.stream.first;
-
-    client.unSub(sub);
+    var recv = await client.requestString(_remotePeerName, msg);
 
     return recv.string;
   }

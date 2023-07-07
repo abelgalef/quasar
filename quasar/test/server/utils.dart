@@ -16,11 +16,16 @@ class ServerController {
 
   Future<String> sendReq(String msg) async {
     await client.waitUntilConnected();
-    await client.pubString(server_addr, msg);
 
-    var recv = await sub.stream.first;
+    var recv = await client.requestString(server_addr, msg);
 
     return recv.string;
+  }
+
+  Future sendNotification(String msg) async {
+    await client.waitUntilConnected();
+
+    return client.pubString(server_addr, msg);
   }
 
   Future<dynamic> close() {

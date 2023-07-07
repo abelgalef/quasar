@@ -31,9 +31,6 @@ class ClientController {
   void gen_resp(Message msg) async {
     completer.complete(msg.string);
 
-    var jsonRPC = JSON_RPC.fromJson(jsonDecode(msg.string));
-    if (jsonRPC.params.return_addr != null) {
-      unawaited(client.pubString(jsonRPC.params.return_addr!, answer));
-    }
+    msg.respondString(answer);
   }
 }

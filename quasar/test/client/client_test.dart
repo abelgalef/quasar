@@ -41,10 +41,7 @@ void main() {
         allOf([
           containsPair('jsonrpc', '2.0'),
           containsPair('method', 'foo'),
-          containsPair(
-              'params',
-              allOf(containsPair('return_addr', isA<String>()),
-                  containsPair('data', {'param': 'param'}))),
+          containsPair('params', containsPair('data', {'param': 'param'})),
           containsPair('id', allOf([isA<int>(), lessThan(100), greaterThan(0)]))
         ]));
   });
@@ -61,7 +58,6 @@ void main() {
           containsPair(
               'params',
               allOf([
-                containsPair('return_addr', null),
                 containsPair('data', {'param': 'param'})
               ])),
           containsPair('id', allOf([isA<int>(), lessThan(100), greaterThan(0)]))
@@ -77,12 +73,7 @@ void main() {
         allOf([
           containsPair('jsonrpc', '2.0'),
           containsPair('method', 'foo'),
-          containsPair(
-              'params',
-              allOf([
-                containsPair('return_addr', null),
-                containsPair('data', {})
-              ])),
+          containsPair('params', allOf([containsPair('data', {})])),
           containsPair('id', allOf([isA<int>(), lessThan(100), greaterThan(0)]))
         ]));
   });
@@ -98,23 +89,22 @@ void main() {
       'id': 1234
     }));
 
-    await expectLater(
+    // var resp = client!.sendRequest('foo', {'param': 'param'});
+
+    expect(
         client!.sendRequest('foo', {'param': 'param'}),
-        throwsA(isA<JSON_RPC_Err>()
+        (throwsA(isA<JSON_RPC_Err>()
             .having((e) => e.code, 'code', equals(error_code.SERVER_ERROR))
             .having(
                 (e) => e.message, 'message', equals('you are bad at requests'))
-            .having((e) => e.data, 'data', equals('some junk data'))));
+            .having((e) => e.data, 'data', equals('some junk data')))));
 
     expect(
         jsonDecode(await rawJson),
         allOf([
           containsPair('jsonrpc', '2.0'),
           containsPair('method', 'foo'),
-          containsPair(
-              'params',
-              allOf(containsPair('return_addr', isA<String>()),
-                  containsPair('data', {'param': 'param'}))),
+          containsPair('params', containsPair('data', {'param': 'param'})),
           containsPair(
               'id', allOf([isA<int>(), lessThan(101), greaterThan(-1)]))
         ]));

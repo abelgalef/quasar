@@ -156,27 +156,28 @@ class QuasarServer extends Quasar {
       var msg = transformMessage(event);
 
       jsonRPC = JSON_RPC.fromJson(jsonDecode(msg));
-    } on FormatException {
-      // CAN NOT RETURN AN ERROR BECAUSE THE RETURN ADDRESS WAS IN THE JSON.
-      return null;
     } catch (e) {
-      // JSON CAN BE DECODED BUT CANT FIT TO THE JSON_RPC CLASS.
+      // JSON CAN NOT BE DECODED.
       try {
         var jsonRPC = jsonDecode(event.string);
 
-        if (jsonRPC['params']['return_addr'] != null) {
-          var jsonRPC_err = JSON_RPC_Err({
-            'code': error_code.INVALID_REQUEST,
-            'message': error_code.name(error_code.INVALID_REQUEST),
-            'data': {'request': jsonRPC, 'full': e.toString()}
-          }, jsonRPC['id'].asNum);
+        var jsonRPC_err = JSON_RPC_Err({
+          'code': error_code.INVALID_REQUEST,
+          'message': error_code.name(error_code.INVALID_REQUEST),
+          'data': {'request': jsonRPC, 'full': e.toString()}
+        }, int.parse(jsonRPC['id']));
 
-          unawaited(client.pubString(
-              jsonRPC._params._return_addr!, jsonEncode(jsonRPC_err)));
-        }
+        event.respondString(jsonEncode(jsonRPC_err.toJson()));
+
         // ignore: empty_catches
-      } catch (e) {}
-
+      } catch (e) {
+        event.respondString(jsonEncode(JSON_RPC_Err({
+          'code': error_code.INVALID_REQUEST,
+          'message': error_code.name(error_code.INVALID_REQUEST),
+          'data': {'request': event.string, 'full': e.toString()}
+        }, -1)
+            .toString()));
+      }
       return null;
     }
 
@@ -187,8 +188,7 @@ class QuasarServer extends Quasar {
         'message': error_code.name(error_code.METHOD_NOT_FOUND)
       }, jsonRPC.id);
 
-      unawaited(client.pubString(
-          jsonRPC.params.return_addr!, jsonEncode(jsonRPC_err)));
+      event.respondString(jsonEncode(jsonRPC_err.toJson()));
       return null;
     }
 
@@ -207,14 +207,10 @@ class QuasarServer extends Quasar {
         'message': error_code.name(error_code.INVALID_PARAMS)
       }, jsonRPC.id);
 
-      if (jsonRPC.params.data == null) {
-        return;
-      }
-
-      unawaited(client.pubString(
-          jsonRPC.params.return_addr!, jsonEncode(jsonRPC_err)));
-      return null;
+      event.respondString(jsonEncode(jsonRPC_err.toJson()));
+      return;
     } catch (e) {
+      // print('fadfa');
       // Get the error thrown by the method.
       var jsonRPC_err = JSON_RPC_Err({
         'code': error_code.SERVER_ERROR,
@@ -222,17 +218,12 @@ class QuasarServer extends Quasar {
         'data': {'request': jsonRPC, 'full': e.toString()}
       }, jsonRPC.id);
 
-      unawaited(client.pubString(
-          jsonRPC.params.return_addr!, jsonEncode(jsonRPC_err)));
+      event.respondString(jsonEncode(jsonRPC_err.toJson()));
       return null;
     }
 
     var jsonRPC_ret = JSON_RPC_Ret(result, jsonRPC.id);
 
-    // Send the result back.
-    if (jsonRPC.params.return_addr != null) {
-      unawaited(client.pubString(
-          jsonRPC.params.return_addr!, jsonEncode(jsonRPC_ret)));
-    }
+    event.respondString(jsonEncode(jsonRPC_ret.toJson()));
   }
 }

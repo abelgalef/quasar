@@ -20,7 +20,7 @@ class Quasar {
 /// Parametes Class used to represent the data that is sent to the server.
 class Parameters {
   /// This String is used to identify this specific request.
-  final String? _return_addr;
+  // final String? _return_addr;
 
   /// This Map contains all the data that is going to be sent to the function invoked.
   final Map<String, dynamic>? _data;
@@ -30,11 +30,11 @@ class Parameters {
   /// @param String `return_addr` The return address of the request (Usually a UUID).
   ///
   /// @param Map<String, dynamic> `data` The supplied data for the request method.
-  Parameters(this._return_addr, this._data);
+  Parameters(this._data);
 
   /// The data [_data] and return address [_return_addr] used by the [Parameters] Class.
   Map<String, dynamic>? get data => _data;
-  String? get return_addr => _return_addr;
+  // String? get return_addr => _return_addr;
 
   /// Transforms a [Parameters] object and returns to a JSON Object.
   ///
@@ -44,12 +44,12 @@ class Parameters {
   ///
   /// Example Object:
   /// {'return_addr': 'my-very-unique-address', 'data': {'foo': 'bar'}}
-  Map<String, dynamic> toJson() => {'return_addr': _return_addr, 'data': _data};
+  Map<String, dynamic> toJson() => {'data': _data};
 
   /// Transforms a Map or a JSON object with keys `return_addr` and `data` to a [Parameters] object.
   Parameters.fromJson(Map<String, dynamic> json)
-      : _return_addr = json['return_addr'],
-        _data = json['data'];
+      // : _return_addr = json['return_addr'],
+      : _data = json['data'];
 }
 
 /// A JSON RPC Request class.
@@ -95,6 +95,13 @@ class JSON_RPC {
         'params': _params.toJson(),
         'id': _id
       };
+
+  String toString() => {
+        'jsonrpc': _jsonrpc,
+        'method': _method,
+        'params': _params.toJson(),
+        'id': _id
+      }.toString();
 
   /// Transforms a Map or a JSON object with keys `id`, `method` and `params` to a [JSON_RPC] object.
   JSON_RPC.fromJson(Map<String, dynamic> json)

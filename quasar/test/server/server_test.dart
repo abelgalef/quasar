@@ -142,7 +142,7 @@ void main() {
         client!.sendReq(jsonEncode({
           'jsonrpc': '2.0',
           'method': 'foo',
-          'params': {'return_addr': client!.client_addr, 'data': null},
+          'params': {'data': null},
           'id': 1234
         })),
         completion(equals(jsonEncode({
@@ -154,7 +154,7 @@ void main() {
               'request': {
                 'jsonrpc': '2.0',
                 'method': 'foo',
-                'params': {'return_addr': client!.client_addr, 'data': null},
+                'params': {'data': null},
                 'id': 1234
               },
               'full': 'FormatException: bad format'
@@ -168,13 +168,13 @@ void main() {
     server!.registerMethod('foo', () => 'result');
 
     expect(
-        client!.sendReq(jsonEncode({
+        client!.sendNotification(jsonEncode({
           'jsonrpc': '2.0',
           'method': 'foo',
-          'params': {'return_addr': null, 'data': {}},
+          'params': {'data': {}},
           'id': 1234
         })),
-        doesNotComplete);
+        completes);
   });
 
   test('a JSON parse error is rejected', () {
