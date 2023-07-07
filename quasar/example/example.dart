@@ -35,7 +35,7 @@ void main(List<String> arguments) async {
   });
 
   // We start a client and pass our NATS server address and name of the server or subject (server prefix) to publish to.
-  var client = QuasarClient('nats://127.0.0.1:4222', 'my-test-server-1');
+  var client = QuasarClient('nats://127.0.0.1:4222', 'my-unique-server-name-1');
 
   // The client won\'t subscribe to the input stream until you call `listen`.
   // The returned Future won\'t complete until the connection is closed.
