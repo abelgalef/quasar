@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.2] - 2023-11-10
+
+- Made files compliant to the dart pub packages standard
+
 ## [0.1.1] - 2023-11-10
 
 - Moved all files/folders up one level

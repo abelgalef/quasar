@@ -2,7 +2,7 @@
 
 ## JSON RPC 2 over NATS.
 
-[![Version](https://img.shields.io/badge/version-0.1.1-blue)](https://github.com/abelgalef/quasar/commit/63e8c37113eb9a7a393f4be266e2104b79fae6e1) [![Version](https://img.shields.io/badge/build-passed-green)](https://github.com/abelgalef/quasar/commit/63e8c37113eb9a7a393f4be266e2104b79fae6e1)
+[![Version](https://img.shields.io/badge/version-0.1.2-blue)](https://github.com/abelgalef/quasar/commit/63e8c37113eb9a7a393f4be266e2104b79fae6e1) [![Version](https://img.shields.io/badge/build-passed-green)](https://github.com/abelgalef/quasar/commit/63e8c37113eb9a7a393f4be266e2104b79fae6e1)
 
 Quasar is a lightweight and performant Dart package that implements the JSON RPC 2 Spec over the NATS Pub/Sub architecture.
 
