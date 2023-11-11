@@ -1,17 +1,15 @@
 name: quasar
-description: A simple command-line application.
-# version: 1.0.0
-# homepage: https://www.example.com
+description: Quasar is a lightweight and performant Dart package that implements the JSON RPC 2 Spec over the NATS Pub/Sub architecture. It can be used as a server, client, or peer, providing seamless communication over various platforms, including Android, iOS, Linux, MacOS, Web, and Windows.
+version: 0.1.1
+homepage: https://github.com/abelgalef/quasar
 
 environment:
-  sdk: '>=2.12.0 <4.0.0'
+  sdk: ">=2.12.0 <4.0.0"
 
-#dependencies:
-#  path: ^1.7.0
-
-dev_dependencies:
-  test: ^1.17.12
-dependencies: 
+dependencies:
   pedantic: ^1.9.0
   dart_nats: ^0.6.1
   uuid: ^3.0.7
+
+dev_dependencies:
+  test: ^1.17.12

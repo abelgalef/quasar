@@ -286,7 +286,7 @@ class QuasarPeer implements QuasarServer, QuasarClient {
   late QuasarClient _client;
   late QuasarServer _server;
 
-  late String _peerName, _remotePeerName, _nats_addr;
+  late String _peerName, _remotePeerName;
 
   @override
   Map<String, Function> methods = {};
@@ -294,7 +294,6 @@ class QuasarPeer implements QuasarServer, QuasarClient {
   QuasarPeer(String peerName, remotePeerName, nats_addr) {
     _peerName = peerName;
     _remotePeerName = remotePeerName;
-    _nats_addr = nats_addr;
 
     _server = QuasarServer(nats_addr, _peerName);
     _client = QuasarClient(nats_addr, _remotePeerName);
