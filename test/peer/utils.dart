@@ -30,6 +30,7 @@ class QuasarPeerController implements QuasarServer, QuasarClient {
   @override
   Map<String, Function> methods = {};
 
+  @override
   Client get client => _client.client;
 
   QuasarPeerController(String peerName, rendezvous, nats_addr) {

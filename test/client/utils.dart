@@ -1,9 +1,7 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:dart_nats/dart_nats.dart';
 import 'package:pedantic/pedantic.dart';
-import 'package:quasar/src/models.dart';
 
 class ClientController {
   final nats_server = 'nats://127.0.0.1:4222', server_name = 'my-test-server-1';

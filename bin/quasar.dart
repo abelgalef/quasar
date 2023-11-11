@@ -365,8 +365,8 @@ void main(List<String> arguments) async {
   await server.close();
   await client.close();
 
-  var peer1_name = "my-peer-1";
-  var peer2_name = "my-peer-2";
+  var peer1_name = 'my-peer-1';
+  var peer2_name = 'my-peer-2';
 
   var peer1 = QuasarPeer(peer1_name, peer2_name, 'nats://127.0.0.1:4222');
   var peer2 = QuasarPeer(peer2_name, peer1_name, 'nats://127.0.0.1:4222');

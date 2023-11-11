@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:convert';
 
 import 'package:pedantic/pedantic.dart';
@@ -8,7 +7,7 @@ import 'package:test/expect.dart';
 import 'package:test/scaffolding.dart';
 
 import 'utils.dart';
-import '../../lib/error_code.dart' as error_code;
+import 'package:quasar/error_code.dart' as error_code;
 
 void main() {
   late QuasarPeer? peer1;

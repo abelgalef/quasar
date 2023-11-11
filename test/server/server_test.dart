@@ -1,12 +1,10 @@
 import 'dart:convert';
-import 'dart:math';
 
-import 'package:dart_nats/dart_nats.dart';
 import 'package:quasar/quasar.dart';
 import 'package:test/test.dart';
 import 'package:uuid/uuid.dart';
 
-import '../../lib/error_code.dart' as error_code;
+import 'package:quasar/error_code.dart' as error_code;
 import 'utils.dart';
 
 void main() {

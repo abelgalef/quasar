@@ -42,6 +42,7 @@ class QuasarPeer implements QuasarServer, QuasarClient {
   @override
   Map<String, Function> methods = {};
 
+  @override
   Client get client => _client.client;
 
   /// Constructor for the [QuasarPeer] class.

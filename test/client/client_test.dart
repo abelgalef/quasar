@@ -1,14 +1,11 @@
-import 'dart:async';
 import 'dart:convert';
 
-import 'package:pedantic/pedantic.dart';
 import 'package:quasar/quasar.dart';
-import 'package:quasar/src/models.dart';
 import 'package:test/expect.dart';
 import 'package:test/scaffolding.dart';
 
 import 'utils.dart';
-import '../../lib/error_code.dart' as error_code;
+import 'package:quasar/error_code.dart' as error_code;
 
 void main() {
   final nats_server = 'nats://127.0.0.1:4222', server_name = 'my-test-server-1';

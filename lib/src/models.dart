@@ -1,7 +1,5 @@
-import 'dart:convert';
 
 import 'package:dart_nats/dart_nats.dart';
-import '../error_code.dart' as error_code;
 
 /// Quasar Class that contains the underlying dart_nats client.
 class Quasar {
@@ -96,6 +94,7 @@ class JSON_RPC {
         'id': _id
       };
 
+  @override
   String toString() => {
         'jsonrpc': _jsonrpc,
         'method': _method,
